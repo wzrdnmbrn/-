@@ -1,0 +1,7 @@
+body{
+    text-align: center;
+}
+.output{
+    border: 2px dotted;
+    position: relative;
+}

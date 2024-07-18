@@ -1,0 +1,30 @@
+#canvas{
+    background-color: lightgray;
+    margin-left: auto;
+    margin-right: auto;
+}
+#div{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center; 
+}
+#button{
+    margin: 2px;
+}
+#divInput{
+    text-align: center;
+    font-size: 17px;
+}
+.input{
+    text-align: center;
+    border: 0;
+    background-color: white;
+    border: 2px dashed rgba(0, 0, 0, 0.404);
+}
+#result{
+    text-align: center;
+    border: 0;
+    background-color: white;
+    border-bottom: 2px double rgba(0, 0, 0, 0.404);
+}

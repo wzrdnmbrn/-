@@ -1,0 +1,18 @@
+#canvas{
+    background-color: #b1d2f1;
+}
+#div{
+    text-align: center; 
+}
+#button{
+    margin: 2px;
+}
+#input{
+    width: 200px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 20px;
+}
+#inputM{
+    text-align: center;
+}
