@@ -1,0 +1,256 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.App {
+  text-align: center;
+}
+
+.gameBackground {
+  width: 100vw;
+  height: 100vh;
+}
+
+
+
+button {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0);
+  font-size: 2vw;
+  color: white;
+  border: solid 0.5vw white;
+}
+
+#son1 {
+  position: absolute;
+  bottom: 15%;
+  height: auto;
+  min-height: 50px;
+  width: 8%;
+}
+
+#son2 {
+  position: absolute;
+  bottom: 15%;
+  height: auto;
+  min-height: 50px;
+  width: 8%;
+}
+
+#dad {
+  position: absolute;
+  bottom: 17%;
+  min-height: 50px;
+  width: 8vw;
+}
+
+button:active {
+  color: white;
+  border: solid 0.5vw #ddf1fc;
+}
+
+.App-logo {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.stopwatch {
+  position: absolute;
+  font-size: 2vw;
+  color: rgb(255, 255, 255);
+  margin-top: 1vh;
+  width: 100vw;
+}
+
+.counts {
+  position: absolute;
+  font-size: 2vw;
+  color: rgb(255, 255, 255);
+  margin-top: 4vh;
+  width: 100vw;
+}
+
+.sendBtn {
+  position: absolute;
+  margin-top: 20vh;
+  margin-left: 40vw;
+  padding: 1vw;
+  background-color: #fdab5fd1;
+  border: 0.5vw solid #fd7a22d1;
+  border-radius: 5vw;
+}
+
+.menuBtn {
+  margin-top: 2vh;
+  right: 15vw;
+  background-color: #fdab5fd1;
+  border: 0.5vw solid #fd7a22d1;
+  border-radius: 5vw;
+}
+
+.alert {
+  font-size: 1.5vw;
+  color: rgb(255, 255, 255);
+}
+
+.alertOuter {
+  position: absolute;
+  width: 40vw;
+  margin-top: 10vh;
+  margin-left: 26vw;
+  background-color: #fd5f5fd1;
+  border: 0.5vw solid #ff2121f6;
+  padding: 1vw;
+  border-radius: 5vw;
+}
+
+.playBtn {
+  width: 20vw;
+  margin-top: 40vh;
+  margin-left: 38.5vw;
+  background-color: #fdab5fd1;
+  border: 0.5vw solid #fd7a22d1;
+  border-radius: 5vw;
+}
+
+.ratingBtn {
+  width: 20vw;
+  margin-top: 50vh;
+  margin-left: 38.5vw;
+  background-color: #fdab5fd1;
+  border: 0.5vw solid #fd7a22d1;
+  border-radius: 5vw;
+}
+
+.gameNameMenu {
+  position: absolute;
+  margin-top: 6vh;
+  width: 100vw;
+  font-size: 2.5vw;
+  color: white;
+}
+
+button {
+  background-color: #fdab5fd1;
+  border: 0.5vw solid #fd7a22d1;
+  border-radius: 5vw;
+}
+.notice {
+  position: absolute;
+  margin-top: 2vh;
+  width: 100vw;
+  font-size: 2vw;
+  color: white;
+}
+
+.sendNickBtn {
+  position: absolute;
+}
+
+.switchRatingBtns {
+  position: absolute;
+  width: 16vw;
+  margin-top: 20vh;
+  
+}
+
+.noneDisplay {
+  display: none;
+}
+
+.switchToGameBtn {
+  position: absolute;
+  margin-left: 10vw;
+  margin-top: 10vh;
+}
+
+.switchToMenuBtn {
+  position: absolute;
+  margin-left: 10.5vw;
+  margin-top: 20vh;
+}
+
+.componentsDiv {
+  position: absolute;
+  width: 30vw;
+  height: 35vh;
+  background-color: #fdc65fd1;
+  border: 0.5vw solid #fd9822d1;
+  color: rgb(255, 255, 255);
+  border-radius: 5vw;
+  overflow-y: scroll;
+  margin-left: 32.5vw;
+  margin-top: 2vh;
+}
+
+.nicknameInp {
+  width: 20vw;
+  height: 3vh;
+  position: absolute;
+  margin-top: 9.1vh;
+  font-size: 1.5vw;
+  background-color: white;
+  padding-left: 0.5vw;
+  margin-left: 30vw;
+  border: 0.5vw solid #ddf1fc;
+}
+
+.sendNicknameBtn {
+  margin-top: 9.5vh;
+  margin-left: 55vw;
+}
+
+.componentsDiv::-webkit-scrollbar {
+  display: none;
+}
+
+.switchScreenBtn {
+  border-color: #fe8c29;
+}
+
+.switchScreenBtn:active {
+  border-color: #fe5729;
+}

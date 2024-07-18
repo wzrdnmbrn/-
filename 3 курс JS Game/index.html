@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Отец и сыновья</title>
+  <script src="./libs/react.production.min.js"></script>
+  <script src="./libs/react-dom.production.min.js"></script>
+  <script src="./libs/babel.min.js"></script>
+  <link rel="stylesheet" href="./index.css" />
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <audio autoplay="autoplay">
+    <source src="./assets/PeriTune_Village_Fete.mp3" />
+  </audio>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="env,react">
+
+    const noop = () => { };
+    const loadImage = (url, callback = noop) => {
+      const img = new Image();
+      img.onload = () => {
+        callback(null, img);
+      };
+      img.onerror = (err) => {
+        callback(err);
+      };
+      img.src = url;
+    };
+
+    const useSprite = ({
+      startFrame = 0,
+      sprite,
+      width,
+      height,
+      direction = "horizontal",
+      onError = noop,
+      onLoad = noop,
+      onEnd = noop,
+      frameCount,
+      fps = 60,
+      shouldAnimate = true,
+      stopLastFrame,
+      reset,
+      scale = 1,
+      wrapAfter,
+      frame,
+    }) => {
+      const prevTime = React.useRef();
+      const [currentFrame, setCurrentFrame] = React.useState(startFrame);
+      const [spriteWidth, setSpriteWidth] = React.useState(0);
+      const [spriteHeight, setSpriteHeight] = React.useState(0);
+      const [isLoaded, setIsLoaded] = React.useState(false);
+      const [isLoading, setIsLoading] = React.useState(false);
+      const [hasErrored, setHasErrored] = React.useState(false);
+      const [maxFrames, setMaxFrames] = React.useState(0);
+      const interval = 1000 / fps;
+
+      const loadSprite = React.useCallback(
+        (url) => {
+          let unmounted = false;
+          if (!isLoading && (!isLoaded || !hasErrored)) {
+            setIsLoading(true);
+            loadImage(url, (err, image) => {
+              if (unmounted) {
+                return;
+              }
+              if (err) {
+                onError(err);
+                setHasErrored(true);
+                return;
+              }
+              onLoad();
+              setIsLoaded(true);
+              setIsLoading(false);
+              setMaxFrames(
+                frameCount ||
+                Math.floor(
+                  direction === "horizontal"
+                    ? image.width / width
+                    : image.height / height
+                )
+              );
+              setSpriteWidth(image.width);
+              setSpriteHeight(image.height);
+            });
+          }
+          return () => (unmounted = true);
+        },
+        [sprite, isLoaded, hasErrored]
+      );
+
+      const animate = React.useCallback(
+        (nextFrame, time) => {
+          if (!prevTime.current) {
+            prevTime.current = time;
+          }
+
+          if (shouldAnimate) {
+            const delta = time - prevTime.current;
+            if (delta < interval) {
+              return requestAnimationFrame((time) =>
+                animate(nextFrame, time)
+              );
+            }
+
+            prevTime.current = time - (delta % interval);
+            setCurrentFrame(nextFrame);
+          } else {
+            prevTime.current = 0;
+          }
+        },
+        [shouldAnimate]
+      );
+
+      const getSpritePosition = React.useCallback(
+        (frame = 0) => {
+          const isHorizontal = direction === "horizontal";
+
+          let row, col;
+          if (typeof wrapAfter === "undefined") {
+            row = isHorizontal ? 0 : frame;
+            col = isHorizontal ? frame : 0;
+          } else {
+            row = isHorizontal
+              ? Math.floor(frame / wrapAfter)
+              : frame % wrapAfter;
+            col = isHorizontal
+              ? frame % wrapAfter
+              : Math.floor(frame / wrapAfter);
+          }
+          const _width = (-width * col) / scale;
+          const _height = (-height * row) / scale;
+          return `${_width}px ${_height}px`;
+        },
+        [direction, width, height, wrapAfter, scale]
+      );
+
+      React.useEffect(() => {
+        setIsLoaded(false);
+        setHasErrored(false);
+        return loadSprite(sprite);
+      }, [sprite]);
+
+      React.useEffect(() => {
+        if (shouldAnimate) {
+          const nextFrame =
+            currentFrame + 1 >= maxFrames ? startFrame : currentFrame + 1;
+
+          if (!shouldAnimate) {
+            return;
+          }
+          if (currentFrame === maxFrames - 1 && stopLastFrame) {
+            return onEnd();
+          }
+
+          let id = requestAnimationFrame((time) => {
+            id = animate(nextFrame, time);
+          });
+          return () => {
+            cancelAnimationFrame(id);
+          };
+        }
+      }, [shouldAnimate, maxFrames, currentFrame, startFrame]);
+
+      React.useEffect(() => {
+        setCurrentFrame(startFrame);
+      }, [reset]);
+
+      React.useEffect(() => {
+        if (typeof frame === "number" && frame !== currentFrame) {
+          setCurrentFrame(frame);
+        }
+      }, [frame]);
+
+      return {
+        backgroundImage: isLoaded ? `url(${sprite})` : null,
+        backgroundPosition: isLoaded ? getSpritePosition(currentFrame) : null,
+        backgroundSize: `${spriteWidth / scale}px ${spriteHeight / scale}px`,
+        width: `${width / scale}px`,
+        height: `${height / scale}px`,
+      };
+    };
+
+    const SpriteAnimator = ({
+      sprite,
+      width,
+      height,
+      frameCount,
+      stopLastFrame,
+      reset,
+      frame,
+      className,
+      wrapAfter,
+      scale = 1,
+      direction = "horizontal",
+      shouldAnimate = true,
+      loop = true,
+      startFrame = 0,
+      fps = 60,
+      onError = noop,
+      onLoad = noop,
+      onEnd = noop,
+    }) => {
+      const style = useSprite({
+        startFrame,
+        sprite,
+        width,
+        height,
+        direction,
+        onError,
+        onLoad,
+        onEnd,
+        frameCount,
+        fps,
+        shouldAnimate,
+        stopLastFrame,
+        reset,
+        frame,
+        scale,
+        wrapAfter,
+      });
+
+      return <div className={className} style={style} />;
+    };
+
+    function Game(data) {
+      const { setScreen, gameData } = data;
+
+      const [time, setTime] = React.useState(0);
+      const [canSend, updateCanSend] = React.useState(true);
+      const [counts, updateCounts] = React.useState(0);
+
+      const [guys] = React.useState({
+        son1: {
+          position: "leftBank",
+          marginTop: "83vh",
+          marginLeft: "8vw",
+          marginLeft_LeftBank: "8vw",
+          marginLeft_RightBank: "88vw",
+        },
+        son2: {
+          position: "leftBank",
+          marginTop: "80vh",
+          marginLeft: "18vw",
+          marginLeft_LeftBank: "18vw",
+          marginLeft_RightBank: "79vw",
+        },
+        dad: {
+          position: "leftBank",
+          marginTop: "88vh",
+          marginLeft: "25vw",
+          marginLeft_LeftBank: "25vw",
+          marginLeft_RightBank: "70vw",
+        },
+      });
+
+      const [raftInfo] = React.useState({
+        position: "leftBank",
+        composition: [],
+      });
+
+      const [spriteScale, updateSpriteScale] = React.useState(
+        200 / ((document.documentElement.clientWidth / 100) * 20)
+      );
+
+      const raftDiv = [
+        <img src="./assets/raft.png" style={{ width: "22vw" }} />,
+        <SpriteAnimator
+          sprite="./assets/ship.png"
+          width={209}
+          height={105}
+          scale={spriteScale}
+          fps={1}
+        />,
+      ];
+
+      const [raftIndex, updateRaftIndex] = React.useState(0);
+      const [alertIndex, updateAlertIndex] = React.useState(1);
+
+      const raftLayout = {
+        leftBank: [
+          { marginLeft: "36vw", marginTop: "10vh" },
+          { marginLeft: "44vw", marginTop: "10vh" },
+        ],
+        rightBank: [
+          { marginLeft: "49vw", marginTop: "10vh" },
+          { marginLeft: "55vw", marginTop: "10vh" },
+        ],
+      };
+
+      const alert = [
+        "Плот способен выдержать на воде либо отца, либо двух сыновей",
+      ];
+
+      React.useEffect(() => {
+        const timer = setTimeout(() => {
+          setTime(time + 1);
+        }, 1000);
+        return () => {
+          clearTimeout(timer);
+        };
+      }, [time]);
+
+      React.useEffect(() => {
+        window.onresize = () => {
+          let spriteScale =
+            200 / ((document.documentElement.clientWidth / 100) * 20);
+          updateSpriteScale(spriteScale);
+        };
+      }, []);
+
+      const son1Ref = React.useRef();
+      const son2Ref = React.useRef();
+      const dadRef = React.useRef();
+
+      const raftDivRef = React.useRef();
+      const divAlertRef = React.useRef();
+
+      function checkOnGameEnd() {
+        if (
+          guys.dad.position === "rightBank" &&
+          guys.son2.position === "rightBank" &&
+          guys.son1.position === "rightBank"
+        ) {
+          gameEnd();
+        }
+      }
+
+      function gameEnd() {
+        gameData.time = time + 2;
+        gameData.counts = counts + 1;
+        setScreen("Rating");
+      }
+
+      function showAlert(index) {
+        updateAlertIndex(index);
+        divAlertRef.current.classList.remove("noneDisplay");
+        setTimeout(() => {
+          divAlertRef.current.classList.add("noneDisplay");
+        }, 3 * 1000);
+      }
+
+      function checkOnConflict() {
+        if (
+          (guys.son1.position == "raft" && guys.dad.position == "raft") ||
+          (guys.dad.position == "raft" && guys.son2.position == "raft")
+        ) {
+          showAlert(0);
+          return true;
+        }
+      }
+
+      function switchStateOnRaft(guy, index, raftPosition, state) {
+        if (guy === "son2") {
+          if (state == 1) {
+            son2Ref.current.style.marginLeft = `${raftLayout[raftPosition][index].marginLeft}`;
+            son2Ref.current.style.marginTop = `${raftLayout[raftPosition][index].marginTop}`;
+          } else {
+            if (raftPosition == "leftBank") {
+              son2Ref.current.style.marginLeft = `${guys.son2.marginLeft_LeftBank}`;
+              son2Ref.current.style.marginTop = `${guys.son2.marginTop}`;
+            } else {
+              son2Ref.current.style.marginLeft = `${guys.son2.marginLeft_RightBank}`;
+              son2Ref.current.style.marginTop = `${guys.son2.marginTop}`;
+            }
+          }
+        } else if (guy === "dad") {
+          if (state == 1) {
+            dadRef.current.style.marginLeft = `${raftLayout[raftPosition][index].marginLeft}`;
+            dadRef.current.style.marginTop = `${raftLayout[raftPosition][index].marginTop}`;
+          } else {
+            if (raftPosition == "leftBank") {
+              dadRef.current.style.marginLeft = `${guys.dad.marginLeft_LeftBank}`;
+              dadRef.current.style.marginTop = `${guys.dad.marginTop}`;
+            } else {
+              dadRef.current.style.marginLeft = `${guys.dad.marginLeft_RightBank}`;
+              dadRef.current.style.marginTop = `${guys.dad.marginTop}`;
+            }
+          }
+        } else if (guy === "son1") {
+          if (state == 1) {
+            son1Ref.current.style.marginLeft = `${raftLayout[raftPosition][index].marginLeft}`;
+            son1Ref.current.style.marginTop = `${raftLayout[raftPosition][index].marginTop}`;
+          } else {
+            if (raftPosition == "leftBank") {
+              son1Ref.current.style.marginLeft = `${guys.son1.marginLeft_LeftBank}`;
+              son1Ref.current.style.marginTop = `${guys.son1.marginTop}`;
+            } else {
+              son1Ref.current.style.marginLeft = `${guys.son1.marginLeft_RightBank}`;
+              son1Ref.current.style.marginTop = `${guys.son1.marginTop}`;
+            }
+          }
+        }
+      }
+
+      function updateElemDisplayPosition(raftPosition, elem) {
+        let count = 0.1;
+        if (raftPosition === "rightBank") count = -0.1;
+
+        if (elem === "son2") {
+          const updateInterval = setInterval(() => {
+            let marginLeft = Number(
+              son2Ref.current.style.marginLeft.replace(/[^\d.-]/g, "")
+            );
+            marginLeft += count;
+            son2Ref.current.style.marginLeft = marginLeft + "vw";
+          }, 15);
+          setTimeout(() => {
+            clearInterval(updateInterval);
+          }, 2 * 1000);
+        } else if (elem === "son1") {
+          const updateInterval = setInterval(() => {
+            let marginLeft = Number(
+              son1Ref.current.style.marginLeft.replace(/[^\d.-]/g, "")
+            );
+            marginLeft += count;
+            son1Ref.current.style.marginLeft = marginLeft + "vw";
+          }, 15);
+          setTimeout(() => {
+            clearInterval(updateInterval);
+          }, 2 * 1000);
+        } else if (elem === "dad") {
+          const updateInterval = setInterval(() => {
+            let marginLeft = Number(
+              dadRef.current.style.marginLeft.replace(/[^\d.-]/g, "")
+            );
+            marginLeft += count;
+            dadRef.current.style.marginLeft = marginLeft + "vw";
+          }, 15);
+          setTimeout(() => {
+            clearInterval(updateInterval);
+          }, 2 * 1000);
+        } else if (elem === "raft") {
+          const updateInterval = setInterval(() => {
+            let marginLeft = Number(
+              raftDivRef.current.style.marginLeft.replace(/[^\d.-]/g, "")
+            );
+            marginLeft += count;
+            raftDivRef.current.style.marginLeft = marginLeft + "vw";
+          }, 15);
+          setTimeout(() => {
+            clearInterval(updateInterval);
+          }, 2 * 1000);
+        }
+      }
+
+      function sendOnVoyage() {
+        if (canSend) {
+          if (raftInfo.composition[0]) {
+            updateCounts(counts + 1);
+            let isConflict = checkOnConflict();
+            if (isConflict) {
+              switchStateOnRaft(
+                raftInfo.composition[0],
+                raftInfo.composition.indexOf(raftInfo.composition[0]),
+                raftInfo.position,
+                0
+              );
+              guys[raftInfo.composition[0]].position = raftInfo.position;
+              if (raftInfo.composition[1]) {
+                switchStateOnRaft(
+                  raftInfo.composition[1],
+                  raftInfo.composition.indexOf(raftInfo.composition[1]),
+                  raftInfo.position,
+                  0
+                );
+                guys[raftInfo.composition[1]].position = raftInfo.position;
+              }
+              raftInfo.composition = [];
+            } else {
+              updateCanSend(false);
+              updateRaftIndex(1);
+
+              updateElemDisplayPosition(
+                raftInfo.position,
+                raftInfo.composition[0]
+              );
+              updateElemDisplayPosition(raftInfo.position, "raft");
+
+              if (raftInfo.composition[1])
+                updateElemDisplayPosition(
+                  raftInfo.position,
+                  raftInfo.composition[1]
+                );
+
+              if (raftInfo.position === "leftBank") {
+                guys[raftInfo.composition[0]].position = "rightBank";
+                if (guys[raftInfo.composition[1]]) {
+                  guys[raftInfo.composition[1]].position = "rightBank";
+                }
+                setTimeout(() => {
+                  raftInfo.position = "rightBank";
+                  updateRaftIndex(0);
+                  switchStateOnRaft(
+                    raftInfo.composition[0],
+                    raftInfo.composition.indexOf(raftInfo.composition[0]),
+                    raftInfo.position,
+                    0
+                  );
+                  if (raftInfo.composition[1])
+                    switchStateOnRaft(
+                      raftInfo.composition[1],
+                      raftInfo.composition.indexOf(raftInfo.composition[1]),
+                      raftInfo.position,
+                      0
+                    );
+                  raftInfo.composition = [];
+                  if (raftDivRef.current) {
+                    raftDivRef.current.style.transform = "scale(-1,1)";
+                  }
+                  updateCanSend(true);
+                  checkOnGameEnd();
+                }, 2 * 1000);
+              } else if (raftInfo.position === "rightBank") {
+                guys[raftInfo.composition[0]].position = "leftBank";
+                if (guys[raftInfo.composition[1]]) {
+                  guys[raftInfo.composition[1]].position = "leftBank";
+                }
+                setTimeout(() => {
+                  raftInfo.position = "leftBank";
+                  updateRaftIndex(0);
+                  switchStateOnRaft(
+                    raftInfo.composition[0],
+                    raftInfo.composition.indexOf(raftInfo.composition[0]),
+                    raftInfo.position,
+                    0
+                  );
+                  if (raftInfo.composition[1])
+                    switchStateOnRaft(
+                      raftInfo.composition[1],
+                      raftInfo.composition.indexOf(raftInfo.composition[1]),
+                      raftInfo.position,
+                      0
+                    );
+                  raftInfo.composition = [];
+                  if (raftDivRef.current) {
+                    raftDivRef.current.style.transform = "scale(1,1)";
+                  }
+                  updateCanSend(true);
+                  checkOnGameEnd();
+                }, 2 * 1000);
+              }
+            }
+          }
+        }
+      }
+
+      function prepareToVoyage(human) {
+        if (canSend) {
+          if (guys[human.id].position === raftInfo.position) {
+            if (raftInfo.composition.length < 2) {
+              raftInfo.composition.push(human.id);
+              guys[human.id].position = "raft";
+              switchStateOnRaft(
+                human.id,
+                raftInfo.composition.indexOf(human.id),
+                raftInfo.position,
+                1
+              );
+            } else return false;
+          } else if (guys[human.id].position === "raft") {
+            let index = raftInfo.composition.indexOf(human.id);
+            raftInfo.composition.splice(index, 1);
+            guys[human.id].position = raftInfo.position;
+            switchStateOnRaft(
+              human.id,
+              raftInfo.composition.indexOf(human.id),
+              raftInfo.position,
+              0
+            );
+            const guyIntoComposition = raftInfo.composition.find(
+              (el) => el != human.id
+            );
+            switchStateOnRaft(
+              guyIntoComposition,
+              raftInfo.composition.indexOf(guyIntoComposition),
+              raftInfo.position,
+              1
+            );
+          }
+        }
+      }
+
+      function switchToMenu() {
+        setScreen("Menu");
+        gameData.time = 0;
+        gameData.counts = 0;
+      }
+
+      return (
+        <div>
+          <div className="stopwatch">Время: {time} сек.</div>
+          <div className="counts">Ходов: {counts} х.</div>
+          <div id="game">
+            <div
+              ref={raftDivRef}
+              style={{
+                position: "absolute",
+                width: "20vw",
+                height: "8vh",
+                marginLeft: "33vw",
+                marginTop: "75vh",
+              }}
+            >
+              {raftDiv[raftIndex]}
+            </div>
+            <div ref={divAlertRef} className="alertOuter noneDisplay">
+              <div className="alert">{alert[alertIndex]}</div>
+            </div>
+
+            <button
+              className="sendBtn"
+              onClick={() => {
+                sendOnVoyage();
+              }}
+            >
+              Отправить
+            </button>
+            <button
+              className="menuBtn"
+              onClick={() => {
+                switchToMenu();
+              }}
+            >
+              Меню
+            </button>
+            <img
+              ref={son1Ref}
+              id="son1"
+              onClick={(e) => {
+                prepareToVoyage(e.target);
+              }}
+              src="./assets/son1.png"
+              style={{
+                marginTop: guys["son1"].marginTop,
+                marginLeft: guys["son1"].marginLeft,
+              }}
+            />
+            <img
+              ref={son2Ref}
+              id="son2"
+              onClick={(e) => {
+                prepareToVoyage(e.target);
+              }}
+              src="./assets/son2.png"
+              style={{
+                marginTop: guys["son2"].marginTop,
+                marginLeft: guys["son2"].marginLeft,
+              }}
+            />
+            <img
+              ref={dadRef}
+              id="dad"
+              onClick={(e) => {
+                prepareToVoyage(e.target);
+              }}
+              src="./assets/dad.png"
+              style={{
+                marginTop: guys["dad"].marginTop,
+                marginLeft: guys["dad"].marginLeft,
+              }}
+            />
+
+            <img src="./assets/background.jpg" className="gameBackground" />
+          </div>
+        </div>
+      );
+    }
+
+    function Menu(data) {
+      const { setScreen } = data;
+      return (
+        <div>
+          <p className="gameNameMenu">Отец и сыновья</p>
+          <button
+            className="playBtn"
+            onClick={() => {
+              setScreen("Game");
+            }}
+          >
+            Играть
+          </button>
+          <button
+            className="ratingBtn"
+            onClick={() => {
+              setScreen("Rating");
+            }}
+          >
+            Рейтинг
+          </button>
+          <img src="./assets/background.jpg" className="gameBackground" />
+        </div>
+      );
+    }
+
+    function Rating(data) {
+      const { setScreen, gameData } = data;
+
+      const nicknameInpRef = React.useRef();
+      const sendNicknameBtnRef = React.useRef();
+      const gameBtnRef = React.useRef();
+      const menuBtnRef = React.useRef();
+
+      const playersDataDivRef = React.useRef();
+
+      const [shownComponent, updateShownComponent] = React.useState(0);
+
+      React.useEffect(() => {
+        if (gameData.counts === 0) {
+          playersDataDivRef.current.classList.add("noneDisplay");
+          updateShownComponent(1);
+        } else {
+          updateShownComponent(0);
+        }
+      }, []);
+
+      const [components, updateComponents] = React.useState([
+        <></>,
+        <RatingList option={0} />,
+        <RatingList option={1} />,
+      ]);
+      const buttons = [
+        <></>,
+        <div>
+          <button className="switchRatingBtns"
+            onClick={() => {
+              updateShownComponent(2);
+            }}
+          >
+            По времени
+          </button>
+        </div>,
+        <div>
+          <button className="switchRatingBtns"
+            onClick={() => {
+              updateShownComponent(1);
+            }}
+          >
+            По ходам
+          </button>
+        </div>,
+      ];
+
+      const description = ["х.", "сек."];
+
+      function checkPlayer(candidate) {
+        if (candidate.substring(0, 6) === "Player") {
+          return true;
+        } else return false;
+      }
+
+      function getPlayers(option) {
+        const data = localStorage.length;
+        let players = {};
+        for (let i = 0; i < data; i++) {
+          let nickname = localStorage.key(i);
+          let isPlayer = checkPlayer(nickname);
+          if (isPlayer) {
+            let playerResult = localStorage.getItem(nickname).split(" ");
+            nickname = nickname.substring(7);
+            players[nickname] = playerResult[option];
+          }
+        }
+        return players;
+      }
+
+      function updateRatingList() {
+        if (nicknameInpRef.current.value) {
+          localStorage.setItem(
+            "Player " + nicknameInpRef.current.value,
+            gameData.counts + " " + gameData.time
+          );
+        }
+        playersDataDivRef.current.classList.add("noneDisplay");
+        components[1] = <RatingList option={0} />;
+        components[2] = <RatingList option={1} />;
+        updateShownComponent(2);
+      }
+
+      function RatingList(data) {
+        const { option } = data;
+        const players = getPlayers(option);
+        if (players) {
+          let sortablePlayerList = Object.entries(players)
+            .sort(([, a], [, b]) => a - b)
+            .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+
+          let playersData = Object.entries(sortablePlayerList);
+          playersData.length = 10;
+          return (
+            <div className="componentsDiv">
+              <div className="ratingListOuter">
+                <div className="ratingList">
+                  {playersData.map((value, index) => {
+                    return (
+                      <div key={index}>
+                        <p style={{ fontSize: "2vw" }} key={value}>
+                          {index + 1 + ". "}
+                          {value.map((innerValue) => {
+                            return innerValue + " ";
+                          })}{" "}
+                          {description[option]}{" "}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        }
+      }
+
+      return (
+        <div>
+          <div
+            ref={playersDataDivRef}
+            className="playersDataDiv"
+            style={{ position: "absolute" }}
+          >
+            <p className="notice">
+              Вы завершили игру в {gameData.counts} х. за {gameData.time} сек.
+            </p>
+            <input
+              className="nicknameInp"
+              maxLength="15"
+              ref={nicknameInpRef}
+              placeholder="Введите ник"
+            />
+            <button
+              className="sendNicknameBtn"
+              ref={sendNicknameBtnRef}
+              onClick={() => {
+                updateRatingList();
+              }}
+            >
+              Отправить
+            </button>
+          </div>
+
+          <div style={{ position: "absolute" }}>
+            <button
+              ref={gameBtnRef}
+              onClick={() => {
+                setScreen("Game");
+                gameData.counts = 0;
+                gameData.time = 0;
+              }}
+              className="switchToGameBtn switchScreenBtn"
+            >
+              Играть
+            </button>
+            <button
+              ref={menuBtnRef}
+              onClick={() => {
+                setScreen("Menu");
+                gameData.counts = 0;
+                gameData.time = 0;
+              }}
+              className="switchScreenBtn switchToMenuBtn"
+            >
+              Меню
+            </button>
+          </div>
+
+          <div
+            style={{
+              position: "absolute",
+              width: "30vw",
+              marginTop: "9vw",
+              marginLeft: "48.5vw",
+            }}
+          >
+            {buttons[shownComponent]}
+          </div>
+          <div>{components[shownComponent]}</div>
+          <img src="./assets/background.jpg" className="gameBackground" />
+        </div>
+      );
+    }
+
+    function App() {
+      const [screen, setScreen] = React.useState("Menu");
+      const [gameData] = React.useState({
+        counts: 0,
+        time: 0,
+      });
+
+      return (
+        <div className="App">
+          <div>
+            {screen === "Game" ? (
+              <Game setScreen={setScreen} gameData={gameData} />
+            ) : screen === "Rating" ? (
+              <Rating setScreen={setScreen} gameData={gameData} />
+            ) : screen === "Menu" ? (
+              <Menu setScreen={setScreen} />
+            ) : (
+              <></>
+            )}
+          </div>
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+
+</html>
